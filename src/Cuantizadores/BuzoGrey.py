@@ -11,7 +11,7 @@ from math import log2
 from multiprocessing import Process, Pool
 
 LOG_DIR = "logs"
-os.mkdir(LOG_DIR, exist_ok=True)
+os.makedirs(LOG_DIR, exist_ok=True)
 
 class CuantizadorVectorial:
     def __init__(self, numeroDeCentroides: int, perturbaciones: np.ndarray, umbralDeDistancia: float = 1e-3):
