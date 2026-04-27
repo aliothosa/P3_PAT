@@ -39,57 +39,31 @@ class CuantizadorVectorial:
     def  __recalcular_centroides(self) -> None:
         for indice, grupo in self.grupos.items():
             self.centroides[indice] = np.mean(grupo, axis=0)
-            
-    def agrupar_puntos(self, segmentStart: int, segmentEnd: int) -> tuple[dict[int, list[np.ndarray]], float]:
-        grupos = {i: [] for i in self.centroides.keys()}
-        distancia_segmento = 0
+                
+                
+    def agrupar_puntos_vectorizado(self) -> None:
+        centroides_keys = list(self.centroides.keys())
+        centroides_array = np.array([self.centroides[k] for k in centroides_keys])
 
-        for punto in self.puntos[segmentStart:segmentEnd]:
-            min_distancia = float("inf")
-            indice_cercano = None
+        distancias = np.linalg.norm(
+            self.puntos[:, np.newaxis, :] - centroides_array[np.newaxis, :, :],
+            axis=2
+        )
+        
+        indices_minimos = np.argmin(distancias, axis=1)
 
-            for indice, centroide in self.centroides.items():
-                distancia = distanciaEuclidiana(punto, centroide)
+        distancias_minimas = np.min(distancias, axis=1)
 
-                if distancia < min_distancia:
-                    min_distancia = distancia
-                    indice_cercano = indice
+        self.distancia_global = float(np.sum(distancias_minimas))
 
-            grupos[indice_cercano].append(punto)
-            distancia_segmento += min_distancia
+        self.grupos = {k: [] for k in centroides_keys}
 
-        return grupos, distancia_segmento
-
-
-    def agrupar_puntos_paralelo(self, numero_procesos: int = 10) -> None:
-        total_puntos = len(self.puntos)
-        segmento_size = total_puntos // numero_procesos
-
-        segmentos = []
-
-        for i in range(numero_procesos):
-            start = i * segmento_size
-            end = (i + 1) * segmento_size if i != numero_procesos - 1 else total_puntos
-            segmentos.append((start, end))
-
-        with Pool(processes=numero_procesos) as pool:
-            resultados = pool.starmap(self.agrupar_puntos, segmentos)
-
-        self.merge_resultados(resultados)
+        for punto, indice_array in zip(self.puntos, indices_minimos):
+            indice_real = centroides_keys[indice_array]
+            self.grupos[indice_real].append(punto)
 
 
-    def merge_resultados(self, resultados: list[tuple[dict[int, list[np.ndarray]], float]]) -> None:
-        grupos_finales = {i: [] for i in self.centroides.keys()}
-        distancia_global = 0
 
-        for grupos, distancia in resultados:
-            distancia_global += distancia
-
-            for indice, puntos in grupos.items():
-                grupos_finales[indice].extend(puntos)
-
-        self.grupos = grupos_finales
-        self.distancia_global = distancia_global
         
     def entrenar(self, puntos: np.ndarray) -> bool:
         self.centroides[0] = self.__encontrar_primer_centroide(puntos)
@@ -101,7 +75,7 @@ class CuantizadorVectorial:
                 distancia_anterior = float('inf')
 
                 while True:
-                    self.agrupar_puntos_paralelo()
+                    self.agrupar_puntos_vectorizado()
                     self.__recalcular_centroides()
                     print(f"Distancia global: {self.distancia_global}")
                     print(f"Distancia anterior: {distancia_anterior}")
@@ -123,8 +97,7 @@ class CuantizadorVectorial:
             if distancia < min_distancia:
                 min_distancia = distancia
                 indice_cercano = indice
-        self.grupos[indice_cercano].append(punto)
-        self.distancia_global += min_distancia
+        return indice_cercano
     
     def obtenerCentroides(self) -> dict[int, np.ndarray]:
         return self.centroides
