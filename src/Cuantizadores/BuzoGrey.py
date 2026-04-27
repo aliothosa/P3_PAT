@@ -1,3 +1,4 @@
+import os
 from typing import List
 
 import numpy as np
@@ -9,11 +10,14 @@ from src.utils.distancias import distanciaEuclidiana
 from math import log2
 from multiprocessing import Process, Pool
 
+LOG_DIR = "logs"
+os.mkdir(LOG_DIR, exist_ok=True)
+
 class CuantizadorVectorial:
-    def __init__(self, numeroDeCentroides: int, perturbaciones: np.ndarray, umbralDeDistancia: float = 1e-4):
+    def __init__(self, numeroDeCentroides: int, perturbaciones: np.ndarray, umbralDeDistancia: float = 1e-3):
         if ( log2(numeroDeCentroides) % 1 != 0):
             raise ValueError("El número de centroides debe ser una potencia de 2.")
-        self.numeroDeCetnroides = numeroDeCentroides
+        self.numeroDeCentroides = numeroDeCentroides
         self.constantesDePerturbacion = perturbaciones
         self.centroides = {}
         self.grupos = {}
@@ -68,8 +72,8 @@ class CuantizadorVectorial:
     def entrenar(self, puntos: np.ndarray) -> bool:
         self.centroides[0] = self.__encontrar_primer_centroide(puntos)
         self.puntos = puntos
-        
-        while len(self.centroides) < self.numeroDeCetnroides:
+        distancias_log = []
+        while len(self.centroides) < self.numeroDeCentroides:
                 self.__perturbar_centroides()
 
                 distancia_anterior = float('inf')
@@ -77,17 +81,24 @@ class CuantizadorVectorial:
                 while True:
                     self.agrupar_puntos_vectorizado()
                     self.__recalcular_centroides()
-                    print(f"Distancia global: {self.distancia_global}")
-                    print(f"Distancia anterior: {distancia_anterior}")
+                    
                     if distancia_anterior != float('inf'):
                         cambio = abs(distancia_anterior - self.distancia_global) / distancia_anterior
 
                         if cambio < self.umbralDeDistancia:
                             break
 
+                    distancias_log.append(self.distancia_global)
                     distancia_anterior = self.distancia_global
 
+        self.write_log(distancias_log)
         return True
+    
+    def write_log(self, distancias: list[float]) -> None:
+        with open(os.path.join(LOG_DIR, f"log_{self.numeroDeCentroides}.csv"), 'a') as f:
+            f.write(f"{self.distancia_global}\n")
+            for distancia in distancias:
+                f.write(f"{distancia}\n")
         
 
     def cuantizar(self, punto: np.ndarray) -> int:
