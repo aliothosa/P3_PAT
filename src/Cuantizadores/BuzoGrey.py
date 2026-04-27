@@ -6,165 +6,125 @@ from src.utils.distancias import distanciaEuclidiana, itakuraSaito
 from src.data.SegmentoDePotencia import Segmento
 import numpy as np
 from src.utils.distancias import distanciaEuclidiana
-
+from math import log2
+from multiprocessing import Process, Pool
 
 class CuantizadorVectorial:
-    def __init__(self,
-        numeroDeCentroides: int,
-        constantesDePerturbacion: np.ndarray,
-        tolerancia_relativa: float = 1e-4,
-        max_iter: int = 50,
-        tamano_lote: int = 100_000,
-        verbose: bool = True
-    ):
-        self.numeroDeCentroides = numeroDeCentroides
-        self.constantesDePerturbacion = np.asarray(constantesDePerturbacion, dtype=np.float64)
-        self.tolerancia_relativa = tolerancia_relativa
-        self.max_iter = max_iter
-        self.tamano_lote = tamano_lote
-        self.verbose = verbose
+    def __init__(self, numeroDeCentroides: int, perturbaciones: np.ndarray, umbralDeDistancia: float = 1e-4):
+        if ( log2(numeroDeCentroides) % 1 != 0):
+            raise ValueError("El número de centroides debe ser una potencia de 2.")
+        self.numeroDeCetnroides = numeroDeCentroides
+        self.constantesDePerturbacion = perturbaciones
         self.centroides = {}
+        self.grupos = {}
+        self.distancia_global = 0 
+        self.puntos:np.ndarray = None
+        self.umbralDeDistancia = umbralDeDistancia
+        
+    def __encontrar_primer_centroide(self, puntos: np.ndarray) -> np.ndarray:
+        return np.mean(puntos, axis=0)
+    
+    
+    def __perturbar_centroides(self) -> float:
+        contador = -1
+        centroides_nuevos = {}
+        for centroide in self.centroides.values():
+            centroide_perturbado_0 = centroide * self.constantesDePerturbacion[0]
+            centroide_perturbado_1 = centroide * self.constantesDePerturbacion[1]
+            
+            centroides_nuevos[contador := contador + 1] = centroide_perturbado_0
+            centroides_nuevos[contador := contador + 1] = centroide_perturbado_1    
+        self.centroides = centroides_nuevos
+        
+    def  __recalcular_centroides(self) -> None:
+        for indice, grupo in self.grupos.items():
+            self.centroides[indice] = np.mean(grupo, axis=0)
+            
+    def agrupar_puntos(self, segmentStart: int, segmentEnd: int) -> tuple[dict[int, list[np.ndarray]], float]:
+        grupos = {i: [] for i in self.centroides.keys()}
+        distancia_segmento = 0
 
-    def _validar_entrada(self, puntos: np.ndarray) -> np.ndarray:
-        puntos = np.asarray(puntos, dtype=np.float64)
+        for punto in self.puntos[segmentStart:segmentEnd]:
+            min_distancia = float("inf")
+            indice_cercano = None
 
-        if puntos.ndim != 2:
-            raise ValueError("puntos debe ser una matriz de forma (num_muestras, dimension).")
+            for indice, centroide in self.centroides.items():
+                distancia = distanciaEuclidiana(punto, centroide)
 
-        if self.numeroDeCentroides <= 0:
-            raise ValueError("numeroDeCentroides debe ser mayor que 0.")
+                if distancia < min_distancia:
+                    min_distancia = distancia
+                    indice_cercano = indice
 
-        if (self.numeroDeCentroides & (self.numeroDeCentroides - 1)) != 0:
-            raise ValueError("Para esta implementación, numeroDeCentroides debe ser potencia de 2.")
+            grupos[indice_cercano].append(punto)
+            distancia_segmento += min_distancia
 
-        dimension = puntos.shape[1]
+        return grupos, distancia_segmento
 
-        if self.constantesDePerturbacion.ndim != 2:
-            raise ValueError("constantesDePerturbacion debe ser una matriz de forma (2, dimension).")
 
-        if self.constantesDePerturbacion.shape != (2, dimension):
-            raise ValueError(
-                f"constantesDePerturbacion debe tener forma (2, {dimension})."
-            )
+    def agrupar_puntos_paralelo(self, numero_procesos: int = 10) -> None:
+        total_puntos = len(self.puntos)
+        segmento_size = total_puntos // numero_procesos
 
-        return puntos
+        segmentos = []
 
-    def _asignar_puntos(self, puntos: np.ndarray, centroides: np.ndarray):
-        """
-        Asigna cada punto al centroide más cercano.
-        Devuelve:
-          - etiquetas: arreglo de enteros con el índice del centroide asignado
-          - distorsion_global: suma de distancias cuadradas mínimas
-        """
-        n = puntos.shape[0]
-        etiquetas = np.empty(n, dtype=np.int32)
-        distorsion_global = 0.0
+        for i in range(numero_procesos):
+            start = i * segmento_size
+            end = (i + 1) * segmento_size if i != numero_procesos - 1 else total_puntos
+            segmentos.append((start, end))
 
-        for inicio in range(0, n, self.tamano_lote):
-            fin = min(inicio + self.tamano_lote, n)
-            lote = puntos[inicio:fin]  # (m, d)
+        with Pool(processes=numero_procesos) as pool:
+            resultados = pool.starmap(self.agrupar_puntos, segmentos)
 
-            # diff -> (m, k, d)
-            diff = lote[:, None, :] - centroides[None, :, :]
+        self.merge_resultados(resultados)
 
-            # distancias cuadradas -> (m, k)
-            distancias2 = np.einsum("mkd,mkd->mk", diff, diff, optimize=True)
 
-            etiquetas_lote = np.argmin(distancias2, axis=1)
-            etiquetas[inicio:fin] = etiquetas_lote
+    def merge_resultados(self, resultados: list[tuple[dict[int, list[np.ndarray]], float]]) -> None:
+        grupos_finales = {i: [] for i in self.centroides.keys()}
+        distancia_global = 0
 
-            dist_minimas = distancias2[np.arange(fin - inicio), etiquetas_lote]
-            distorsion_global += float(np.sum(dist_minimas))
+        for grupos, distancia in resultados:
+            distancia_global += distancia
 
-        return etiquetas, distorsion_global
+            for indice, puntos in grupos.items():
+                grupos_finales[indice].extend(puntos)
 
-    def _recalcular_centroides(
-        self,
-        puntos: np.ndarray,
-        etiquetas: np.ndarray,
-        centroides_anteriores: np.ndarray
-    ) -> np.ndarray:
-        nuevos_centroides = centroides_anteriores.copy()
-        k = centroides_anteriores.shape[0]
-
-        for i in range(k):
-            mascara = (etiquetas == i)
-            if np.any(mascara):
-                nuevos_centroides[i] = np.mean(puntos[mascara], axis=0)
-            else:
-                # Si un grupo queda vacío, conservamos el centroide anterior
-                nuevos_centroides[i] = centroides_anteriores[i]
-
-        return nuevos_centroides
-
+        self.grupos = grupos_finales
+        self.distancia_global = distancia_global
+        
     def entrenar(self, puntos: np.ndarray) -> bool:
-        puntos = self._validar_entrada(puntos)
+        self.centroides[0] = self.__encontrar_primer_centroide(puntos)
+        self.puntos = puntos
+        
+        while len(self.centroides) < self.numeroDeCetnroides:
+                self.__perturbar_centroides()
 
-        e1, e2 = self.constantesDePerturbacion
+                distancia_anterior = float('inf')
 
-        # Centroide inicial
-        centroides_actuales = np.mean(puntos, axis=0, keepdims=True)
+                while True:
+                    self.agrupar_puntos_paralelo()
+                    self.__recalcular_centroides()
+                    print(f"Distancia global: {self.distancia_global}")
+                    print(f"Distancia anterior: {distancia_anterior}")
+                    if distancia_anterior != float('inf'):
+                        cambio = abs(distancia_anterior - self.distancia_global) / distancia_anterior
 
-        etapa = 0
-        while centroides_actuales.shape[0] < self.numeroDeCentroides:
-            etapa += 1
+                        if cambio < self.umbralDeDistancia:
+                            break
 
-            # Split de centroides
-            centroides_actuales = np.vstack([
-                centroides_actuales * e1,
-                centroides_actuales * e2
-            ])
+                    distancia_anterior = self.distancia_global
 
-            if self.verbose:
-                print(f"\nEtapa {etapa}: entrenando con {centroides_actuales.shape[0]} centroides")
-
-            distorsion_anterior = None
-
-            for iteracion in range(1, self.max_iter + 1):
-                etiquetas, distorsion_actual = self._asignar_puntos(puntos, centroides_actuales)
-                nuevos_centroides = self._recalcular_centroides(
-                    puntos,
-                    etiquetas,
-                    centroides_actuales
-                )
-
-                if distorsion_anterior is not None:
-                    mejora_relativa = abs(distorsion_anterior - distorsion_actual) / max(distorsion_anterior, 1e-12)
-
-                    if self.verbose:
-                        print(
-                            f"  Iter {iteracion:02d} | "
-                            f"Distorsión: {distorsion_actual:.6f} | "
-                            f"Mejora relativa: {mejora_relativa:.8f}"
-                        )
-
-                    centroides_actuales = nuevos_centroides
-
-                    if mejora_relativa < self.tolerancia_relativa:
-                        if self.verbose:
-                            print(f"  Convergió en {iteracion} iteraciones.")
-                        break
-                else:
-                    if self.verbose:
-                        print(f"  Iter {iteracion:02d} | Distorsión inicial: {distorsion_actual:.6f}")
-                    centroides_actuales = nuevos_centroides
-
-                distorsion_anterior = distorsion_actual
-
-        self.centroides = {i: c for i, c in enumerate(centroides_actuales)}
         return True
+        
 
     def cuantizar(self, punto: np.ndarray) -> int:
-        if len(self.centroides) == 0:
-            raise ValueError("El cuantizador no ha sido entrenado todavía.")
-
-        punto = np.asarray(punto, dtype=np.float64)
-        centroides = np.array([self.centroides[i] for i in sorted(self.centroides.keys())])
-
-        diff = centroides - punto
-        distancias2 = np.einsum("kd,kd->k", diff, diff, optimize=True)
-
-        return int(np.argmin(distancias2))
-
+        min_distancia = float('inf')
+        for indice, centroide in self.centroides.items():
+            distancia = distanciaEuclidiana(punto, centroide)
+            if distancia < min_distancia:
+                min_distancia = distancia
+                indice_cercano = indice
+        self.grupos[indice_cercano].append(punto)
+        self.distancia_global += min_distancia
+    
     def obtenerCentroides(self) -> dict[int, np.ndarray]:
         return self.centroides
