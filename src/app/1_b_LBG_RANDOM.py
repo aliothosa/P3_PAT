@@ -1,13 +1,13 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-from src.Cuantizadores.BuzoGrey import CuantizadorVectorial
+from src.cuantizadores.BuzoGrey import CuantizadorVectorial
 from matplotlib.colors import ListedColormap, BoundaryNorm
 
 NUMERO_PUNTOS = 1_000_000
 PORCENTAJE_ENTRENAMIENTO = 0.8
 MAX_PUNTOS_GRAFICA = 20000
-NUMEROS_CENTROIDES = [8, 16, 64, 256]
+NUMEROS_CENTROIDES = [1, 2, 4, 8, 16, 64, 256]
 RANDOM_STATE = 42
 
 arregloTuplas = np.loadtxt("src/resources/tuplas.csv", delimiter=",", dtype=float)
@@ -23,7 +23,7 @@ indices_muestra = rng.choice(len(puntos_prueba), size=cantidad_grafica, replace=
 puntos_muestra = puntos_prueba[indices_muestra]
 
 
-fig_lbg, axes_lbg = plt.subplots(2, 2, figsize=(16, 14), constrained_layout=True)
+fig_lbg, axes_lbg = plt.subplots(4, 2, figsize=(16, 14), constrained_layout=True)
 fig_lbg.suptitle("Cuantización vectorial con Linde-Buzo-Gray (LBG)", fontsize=16)
 axes_lbg = axes_lbg.flatten()
 
@@ -98,9 +98,26 @@ def graficar_en_eje(ax, puntos, etiquetas, centroides, titulo, seed=42):
 for idx, numero_centroides in enumerate(NUMEROS_CENTROIDES):
         print(f"\nProcesando {numero_centroides} regiones...")
 
-        # =========================
-        # LBG
-        # =========================
+        direccionObjeto = f"src/resources/objects/buzo_grey_random_{numero_centroides}_centroides.obj"
+        
+        if os.path.isfile(direccionObjeto):
+            cuantizador = CuantizadorVectorial.load(direccionObjeto)
+        else:
+            cuantizador = CuantizadorVectorial(
+                numeroDeCentroides=numero_centroides,
+                perturbaciones=np.array(
+                    [
+                        [1.0, 1.001], 
+                        [1.0, 0.999]
+                    ],
+                    dtype=np.float64
+                )
+            )
+        
+            cuantizador.entrenar(puntos_entrenamiento)
+
+
+
         cuantizador = CuantizadorVectorial(
             numeroDeCentroides=numero_centroides,
             perturbaciones = perturbaciones_aleatorias
@@ -133,6 +150,8 @@ for idx, numero_centroides in enumerate(NUMEROS_CENTROIDES):
             (puntos_muestra - centroides_lbg[etiquetas_lbg]) ** 2
         )
         distorsiones_lbg[numero_centroides] = distorsion_lbg
+        
+        CuantizadorVectorial.write(cuantizador, direccionObjeto)
 
 plt.show()
 
