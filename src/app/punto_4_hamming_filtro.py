@@ -1,8 +1,6 @@
 
 import numpy as np
-from muestreo import muestreo_audios
-from typing import List
-from scipy import signal
+from punto_3_muestreo import muestreo_audios
 
 def aplicar_preenfasis(audio, coeficiente=0.95): 
     audio_preenfatizado = np.zeros_like(audio)

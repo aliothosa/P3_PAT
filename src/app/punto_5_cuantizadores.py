@@ -1,14 +1,10 @@
 import numpy as np
 from typing import List, Tuple
 import sys
-import importlib.util
 from pathlib import Path
 
-# Cargar el módulo 4_hamming_filtro
-spec = importlib.util.spec_from_file_location("hamming_filtro", "4_hamming_filtro.py")
-hamming_filtro = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(hamming_filtro)
-senales_procesadas = hamming_filtro.senales_procesadas
+# Cargar el módulo punto_4_hamming_filtro
+from punto_4_hamming_filtro import senales_procesadas
 
 # Importar filtroWiener desde utils
 sys.path.insert(0, str(Path(__file__).parent.parent))

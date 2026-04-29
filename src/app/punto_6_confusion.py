@@ -1,23 +1,9 @@
 import numpy as np
 from typing import Dict, Tuple
-import sys
-import importlib.util
-from pathlib import Path
 
-# Cargar el módulo 4_hamming_filtro
-spec = importlib.util.spec_from_file_location("hamming_filtro", "4_hamming_filtro.py")
-hamming_filtro = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(hamming_filtro)
-senales_procesadas = hamming_filtro.senales_procesadas
-
-# Cargar el módulo 5_cuantizadores
-spec = importlib.util.spec_from_file_location("cuantizadores", "5_cuantizadores.py")
-cuantizadores_mod = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(cuantizadores_mod)
-
-# Reutilizar funciones del módulo 5
-calcular_coeficientes_lpc = cuantizadores_mod.calcular_coeficientes_lpc
-distancia_itakura_saito = cuantizadores_mod.distancia_itakura_saito
+# Cargar módulos requeridos
+from punto_4_hamming_filtro import senales_procesadas
+from punto_5_cuantizadores import calcular_coeficientes_lpc, distancia_itakura_saito, main as main_punto5
 
 
 def extraer_vectores_prueba(senales_dict: dict, orden: int = 12, skip_first: int = 10, 
@@ -158,7 +144,7 @@ def main():
     
     # Obtener cuantizadores del punto 5
     print("Cargando cuantizadores del punto 5...")
-    _, cuantizadores = cuantizadores_mod.main()
+    _, cuantizadores = main_punto5()
     
     print("\nExtrayendo vectores LPC de prueba (5 archivos por dígito, archivos 11-15)...")
     vectores_prueba = extraer_vectores_prueba(senales_procesadas, orden=12, 
