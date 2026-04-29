@@ -1,196 +1,232 @@
+"""
+Punto 6 - Matriz de confusión por AUDIO COMPLETO.
+
+Rediseño:
+- Antes se sumaba una predicción por cada vector LPC/marco.
+- Ahora se sumará una sola predicción por cada audio.
+- Cada audio se clasifica usando la menor distorsión promedio contra cada cuantizador.
+"""
+
+from typing import Dict, List, Tuple
+
 import numpy as np
-from typing import Dict, Tuple
 
-# Cargar módulos requeridos
-from punto_4_hamming_filtro import senales_procesadas
-from punto_5_cuantizadores import calcular_coeficientes_lpc, distancia_itakura_saito, main as main_punto5
+from src.app.punto_4_hamming_filtro import procesar_audios
+from src.app.punto_5_cuantizadores import (
+    AudioLPC,
+    Cuantizador,
+    clasificar_audio_por_distorsion,
+    entrenar_cuantizadores,
+    extraer_vectores_lpc,
+)
+
+ResultadoAudio = Dict[str, object]
 
 
-def extraer_vectores_prueba(senales_dict: dict, orden: int = 12, skip_first: int = 10, 
-                             max_archivos: int = 5) -> dict:
+def extraer_vectores_prueba(
+    senales_dict: dict,
+    orden: int = 12,
+    skip_first: int = 10,
+    max_archivos: int = 5,
+) -> Dict[str, List[AudioLPC]]:
     """
-    Extrae vectores LPC de los últimos 5 archivos de cada etiqueta (archivos 11-15).
-    
-    Args:
-        senales_dict: Diccionario con señales procesadas del punto 4
-        orden: Orden de los coeficientes LPC
-        skip_first: Número de archivos a saltar al inicio (default 10)
-        max_archivos: Número de archivos a usar (default 5)
-    
-    Returns:
-        Diccionario con vectores LPC de prueba por etiqueta
+    Extrae LPC de audios de prueba.
+
+    Por defecto:
+        - salta los primeros 10 audios de cada etiqueta,
+        - usa los siguientes 5 como prueba.
     """
-    vectores_prueba = {}
-    
-    for etiqueta, lista_audios in senales_dict.items():
-        vectores_prueba[etiqueta] = []
-        
-        # Usar archivos del 11 al 15 (skip_first:skip_first+max_archivos)
-        for audio_procesado in lista_audios[skip_first:skip_first + max_archivos]:
-            marcos = audio_procesado["marcos"]
-            coeficientes_por_marco = []
-            
-            for marco in marcos:
-                coefs = calcular_coeficientes_lpc(marco, orden)
-                coeficientes_por_marco.append(coefs)
-            
-            vectores_prueba[etiqueta].append(np.array(coeficientes_por_marco))
-    
-    return vectores_prueba
+    return extraer_vectores_lpc(
+        senales_dict,
+        orden=orden,
+        inicio=skip_first,
+        max_archivos=max_archivos,
+    )
 
 
-def clasificar_vector_lpc(vector_lpc: np.ndarray, cuantizadores: dict) -> Tuple[str, float]:
+def construir_matriz_confusion_por_audio(
+    vectores_prueba: Dict[str, List[AudioLPC]],
+    cuantizadores: Dict[str, Cuantizador],
+    etiquetas: List[str],
+) -> Tuple[np.ndarray, List[ResultadoAudio]]:
     """
-    Clasifica un vector LPC encontrando el centroide más cercano.
-    
-    Args:
-        vector_lpc: Vector LPC a clasificar
-        cuantizadores: Diccionario con cuantizadores de cada dígito
-    
-    Returns:
-        Tupla (dígito_clasificado, distancia_mínima)
-    """
-    min_distancia = float('inf')
-    digito_clasificado = None
-    
-    for digito, cuantizador in cuantizadores.items():
-        centroides = cuantizador["centroides"]
-        
-        # Encontrar distancia mínima a cualquier centroide
-        for centroide in centroides:
-            dist = distancia_itakura_saito(vector_lpc, centroide)
-            if dist < min_distancia:
-                min_distancia = dist
-                digito_clasificado = digito
-    
-    return digito_clasificado, min_distancia
+    Construye la matriz de confusión evaluando una vez por audio.
 
-
-def construir_matriz_confusion(vectores_prueba: dict, cuantizadores: dict, 
-                               etiquetas: list) -> np.ndarray:
+    Filas: etiqueta real.
+    Columnas: etiqueta predicha.
     """
-    Construye la matriz de confusión clasificando los vectores de prueba.
-    
-    Args:
-        vectores_prueba: Diccionario con vectores LPC de prueba
-        cuantizadores: Diccionario con cuantizadores entrenados
-        etiquetas: Lista de etiquetas (dígitos)
-    
-    Returns:
-        Matriz de confusión (real x predicho)
-    """
-    num_clases = len(etiquetas)
-    matriz_confusion = np.zeros((num_clases, num_clases), dtype=int)
-    
-    # Mapeo de etiqueta a índice
+    matriz_confusion = np.zeros((len(etiquetas), len(etiquetas)), dtype=int)
     etiqueta_a_indice = {etiqueta: idx for idx, etiqueta in enumerate(etiquetas)}
-    
-    for etiqueta_real, lista_vectores_archivos in vectores_prueba.items():
+    resultados: List[ResultadoAudio] = []
+
+    for etiqueta_real, lista_audios_lpc in vectores_prueba.items():
         idx_real = etiqueta_a_indice[etiqueta_real]
-        
-        for vectores_archivo in lista_vectores_archivos:
-            for vector_lpc in vectores_archivo:
-                # Clasificar el vector
-                etiqueta_predicha, _ = clasificar_vector_lpc(vector_lpc, cuantizadores)
-                idx_predicho = etiqueta_a_indice[etiqueta_predicha]
-                
-                # Incrementar matriz de confusión
-                matriz_confusion[idx_real, idx_predicho] += 1
-    
+
+        for audio_info in lista_audios_lpc:
+            etiqueta_predicha, distorsiones = clasificar_audio_por_distorsion(
+                audio_info["lpc"],
+                cuantizadores,
+            )
+
+            idx_predicho = etiqueta_a_indice[etiqueta_predicha]
+            matriz_confusion[idx_real, idx_predicho] += 1
+
+            resultados.append(
+                {
+                    "archivo": audio_info["archivo"],
+                    "etiqueta_real": etiqueta_real,
+                    "etiqueta_predicha": etiqueta_predicha,
+                    "correcto": etiqueta_real == etiqueta_predicha,
+                    "num_marcos": audio_info["num_marcos"],
+                    "distorsiones": distorsiones,
+                    "distorsion_ganadora": distorsiones[etiqueta_predicha],
+                }
+            )
+
+    return matriz_confusion, resultados
+
+
+# Alias útil si quieres conservar el nombre anterior, pero ahora clasifica por audio.
+def construir_matriz_confusion(
+    vectores_prueba: Dict[str, List[AudioLPC]],
+    cuantizadores: Dict[str, Cuantizador],
+    etiquetas: List[str],
+) -> np.ndarray:
+    matriz_confusion, _ = construir_matriz_confusion_por_audio(
+        vectores_prueba,
+        cuantizadores,
+        etiquetas,
+    )
     return matriz_confusion
 
 
 def calcular_metricas(matriz_confusion: np.ndarray) -> dict:
     """
-    Calcula métricas de desempeño a partir de la matriz de confusión.
-    
-    Args:
-        matriz_confusion: Matriz de confusión
-    
-    Returns:
-        Diccionario con métricas (accuracy, precision, recall, etc.)
+    Calcula accuracy, precisión y recall a partir de una matriz de confusión.
     """
-    total = np.sum(matriz_confusion)
-    correctos = np.trace(matriz_confusion)
+    total = int(np.sum(matriz_confusion))
+    correctos = int(np.trace(matriz_confusion))
     accuracy = correctos / total if total > 0 else 0
-    
-    # Precisión y recall por clase
+
     precision_por_clase = []
     recall_por_clase = []
-    
+
     for i in range(matriz_confusion.shape[0]):
-        # Precisión: TP / (TP + FP)
-        predichos_clase_i = np.sum(matriz_confusion[:, i])
         tp = matriz_confusion[i, i]
+
+        predichos_clase_i = np.sum(matriz_confusion[:, i])
         precision = tp / predichos_clase_i if predichos_clase_i > 0 else 0
-        precision_por_clase.append(precision)
-        
-        # Recall: TP / (TP + FN)
+        precision_por_clase.append(float(precision))
+
         reales_clase_i = np.sum(matriz_confusion[i, :])
         recall = tp / reales_clase_i if reales_clase_i > 0 else 0
-        recall_por_clase.append(recall)
-    
+        recall_por_clase.append(float(recall))
+
     return {
+        "total_audios_evaluados": total,
+        "correctos": correctos,
         "accuracy": accuracy,
-        "precision_promedio": np.mean(precision_por_clase),
-        "recall_promedio": np.mean(recall_por_clase),
+        "precision_promedio": float(np.mean(precision_por_clase)) if precision_por_clase else 0,
+        "recall_promedio": float(np.mean(recall_por_clase)) if recall_por_clase else 0,
         "precision_por_clase": precision_por_clase,
-        "recall_por_clase": recall_por_clase
+        "recall_por_clase": recall_por_clase,
     }
 
 
-def main():
-    print("=== Punto 6: Matriz de Confusión de Reconocimiento ===\n")
-    
-    # Obtener cuantizadores del punto 5
-    print("Cargando cuantizadores del punto 5...")
-    _, cuantizadores = main_punto5()
-    
-    print("\nExtrayendo vectores LPC de prueba (5 archivos por dígito, archivos 11-15)...")
-    vectores_prueba = extraer_vectores_prueba(senales_procesadas, orden=12, 
-                                               skip_first=10, max_archivos=5)
-    
-    # Obtener lista de etiquetas
-    etiquetas = sorted(list(vectores_prueba.keys()))
-    print(f"Etiquetas encontradas: {etiquetas}")
-    
-    # Construir matriz de confusión
-    print("\nClasificando vectores de prueba...")
-    matriz_confusion = construir_matriz_confusion(vectores_prueba, cuantizadores, etiquetas)
-    
-    # Mostrar matriz de confusión
-    print("\n--- MATRIZ DE CONFUSIÓN ---")
-    print("Filas: Etiqueta Real | Columnas: Etiqueta Predicha\n")
-    
-    # Header
+def imprimir_matriz_confusion(matriz_confusion: np.ndarray, etiquetas: List[str]) -> None:
+    print("\n--- MATRIZ DE CONFUSIÓN POR AUDIO ---")
+    print("Filas: Etiqueta real | Columnas: Etiqueta predicha\n")
+
     print("        ", end="")
     for etiqueta in etiquetas:
         print(f"{str(etiqueta):>8}", end="")
     print()
-    
-    # Datos
+
     for i, etiqueta_real in enumerate(etiquetas):
-        print(f"{etiqueta_real:>7}  ", end="")
+        print(f"{str(etiqueta_real):>7} ", end="")
         for j in range(len(etiquetas)):
             print(f"{matriz_confusion[i, j]:>8}", end="")
         print()
-    
-    # Calcular métricas
-    print("\n--- MÉTRICAS DE DESEMPEÑO ---")
+
+
+def imprimir_resultados_por_audio(resultados: List[ResultadoAudio], limite: int = 50) -> None:
+    print("\n--- RESULTADOS POR AUDIO ---")
+    print("Cada fila es una predicción final de un archivo completo.\n")
+
+    for resultado in resultados[:limite]:
+        estado = "✓" if resultado["correcto"] else "✗"
+        print(
+            f"{estado} archivo={resultado['archivo']} | "
+            f"real={resultado['etiqueta_real']} | "
+            f"predicha={resultado['etiqueta_predicha']} | "
+            f"marcos={resultado['num_marcos']} | "
+            f"distorsión={resultado['distorsion_ganadora']:.6f}"
+        )
+
+    if len(resultados) > limite:
+        print(f"... se omitieron {len(resultados) - limite} resultados más.")
+
+
+def main():
+    print("=== Punto 6: Matriz de Confusión por Audio ===\n")
+
+    orden_lpc = 12
+    num_centroides = 256
+    num_audios_entrenamiento = 10
+    num_audios_prueba = None
+
+    print("Procesando audios...")
+    senales_procesadas = procesar_audios()
+
+    print("\nEntrenando cuantizadores con audios de entrenamiento...")
+    _, cuantizadores = entrenar_cuantizadores(
+        senales_procesadas=senales_procesadas,
+        orden=orden_lpc,
+        num_centroides=num_centroides,
+        num_audios_entrenamiento=num_audios_entrenamiento,
+    )
+
+    print("\nExtrayendo LPC de audios de prueba...")
+    vectores_prueba = extraer_vectores_prueba(
+        senales_procesadas,
+        orden=orden_lpc,
+        skip_first=0,
+        max_archivos=num_audios_prueba,
+    )
+
+    etiquetas = sorted(list(cuantizadores.keys()))
+    print(f"Etiquetas encontradas: {etiquetas}")
+
+    print("\nClasificando audios completos...")
+    matriz_confusion, resultados = construir_matriz_confusion_por_audio(
+        vectores_prueba,
+        cuantizadores,
+        etiquetas,
+    )
+
+    imprimir_resultados_por_audio(resultados)
+    imprimir_matriz_confusion(matriz_confusion, etiquetas)
+
     metricas = calcular_metricas(matriz_confusion)
-    
-    print(f"\nAccuracy Global: {metricas['accuracy']:.4f}")
-    print(f"Precisión Promedio: {metricas['precision_promedio']:.4f}")
-    print(f"Recall Promedio: {metricas['recall_promedio']:.4f}")
-    
+
+    print("\n--- MÉTRICAS DE DESEMPEÑO POR AUDIO ---")
+    print(f"Audios evaluados: {metricas['total_audios_evaluados']}")
+    print(f"Audios correctos: {metricas['correctos']}")
+    print(f"Accuracy global: {metricas['accuracy']:.4f}")
+    print(f"Precisión promedio: {metricas['precision_promedio']:.4f}")
+    print(f"Recall promedio: {metricas['recall_promedio']:.4f}")
+
     print("\n--- MÉTRICAS POR CLASE ---")
     for idx, etiqueta in enumerate(etiquetas):
-        print(f"{etiqueta}: Precision={metricas['precision_por_clase'][idx]:.4f}, "
-              f"Recall={metricas['recall_por_clase'][idx]:.4f}")
-    
+        print(
+            f"{etiqueta}: "
+            f"Precision={metricas['precision_por_clase'][idx]:.4f}, "
+            f"Recall={metricas['recall_por_clase'][idx]:.4f}"
+        )
+
     print("\n✓ Punto 6 completado")
-    return matriz_confusion, metricas
+    return matriz_confusion, metricas, resultados
 
 
 if __name__ == "__main__":
-    matriz_confusion, metricas = main()
+    matriz_confusion, metricas, resultados = main()
