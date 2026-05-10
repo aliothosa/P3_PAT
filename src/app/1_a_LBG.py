@@ -27,7 +27,6 @@ fig_lbg, axes_lbg = plt.subplots(4, 2, figsize=(16, 14), constrained_layout=True
 fig_lbg.suptitle("Cuantización vectorial con Linde-Buzo-Gray (LBG)", fontsize=16)
 axes_lbg = axes_lbg.flatten()
 
-distorsiones_lbg = {}
 
 def graficar_en_eje(ax, puntos, etiquetas, centroides, titulo, seed=42):
     etiquetas_unicas = np.unique(etiquetas)
@@ -125,17 +124,12 @@ for idx, numero_centroides in enumerate(NUMEROS_CENTROIDES):
             f"LBG - {numero_centroides} regiones"
         )
 
-        # Distorsión LBG
-        distorsion_lbg = np.sum(
-            (puntos_muestra - centroides_lbg[etiquetas_lbg]) ** 2
-        )
-        distorsiones_lbg[numero_centroides] = distorsion_lbg
         CuantizadorVectorial.write(cuantizador, direccionObjeto)
 
-
+plt.savefig("src/output/1_a_LBG_cuantizacion.png", dpi=300)
 plt.show()
 
-print("\n=== Distorsiones LBG ===")
-for k, v in distorsiones_lbg.items():
-    print(f"{k} regiones: {v:.6f}")
 
+
+
+# python -m src.app.1_a_LBG

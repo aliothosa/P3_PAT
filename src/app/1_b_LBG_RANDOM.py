@@ -27,7 +27,7 @@ fig_lbg, axes_lbg = plt.subplots(4, 2, figsize=(16, 14), constrained_layout=True
 fig_lbg.suptitle("Cuantización vectorial con Linde-Buzo-Gray (LBG)", fontsize=16)
 axes_lbg = axes_lbg.flatten()
 
-distorsiones_lbg = {}
+
 
 rng = np.random.default_rng(RANDOM_STATE)
 
@@ -57,10 +57,14 @@ def graficar_en_eje(ax, puntos, etiquetas, centroides, titulo, seed=42):
     mapa = {lab: i for i, lab in enumerate(etiquetas_unicas)}
     etiquetas_reindexadas = np.array([mapa[e] for e in etiquetas])
 
-    # Generar muchos colores y mezclarlos
-    colores = plt.cm.gist_ncar(np.linspace(0, 1, k))
-    rng = np.random.default_rng(seed)
-    rng.shuffle(colores)
+    # Generar más colores de los necesarios
+    colores = plt.cm.gist_ncar(np.linspace(0, 1, max(k * 4, 256)))
+
+    # Eliminar colores blancos o casi blancos
+    colores = np.array([
+        color for color in colores
+        if not (color[0] > 0.9 and color[1] > 0.9 and color[2] > 0.9)
+    ])
 
     cmap = ListedColormap(colores)
     norm = BoundaryNorm(np.arange(-0.5, k + 0.5, 1), cmap.N)
@@ -105,23 +109,11 @@ for idx, numero_centroides in enumerate(NUMEROS_CENTROIDES):
         else:
             cuantizador = CuantizadorVectorial(
                 numeroDeCentroides=numero_centroides,
-                perturbaciones=np.array(
-                    [
-                        [1.0, 1.001], 
-                        [1.0, 0.999]
-                    ],
-                    dtype=np.float64
-                )
+                perturbaciones=perturbaciones_aleatorias
             )
         
             cuantizador.entrenar(puntos_entrenamiento)
 
-
-
-        cuantizador = CuantizadorVectorial(
-            numeroDeCentroides=numero_centroides,
-            perturbaciones = perturbaciones_aleatorias
-        )
 
         cuantizador.entrenar(puntos_entrenamiento)
 
@@ -145,17 +137,12 @@ for idx, numero_centroides in enumerate(NUMEROS_CENTROIDES):
             f"LBG - {numero_centroides} regiones"
         )
 
-        # Distorsión LBG
-        distorsion_lbg = np.sum(
-            (puntos_muestra - centroides_lbg[etiquetas_lbg]) ** 2
-        )
-        distorsiones_lbg[numero_centroides] = distorsion_lbg
+    
         
         CuantizadorVectorial.write(cuantizador, direccionObjeto)
 
+plt.savefig("src/output/1_b_LBG_random_cuantizacion.png", dpi=300)
 plt.show()
 
-print("\n=== Distorsiones LBG ===")
-for k, v in distorsiones_lbg.items():
-    print(f"{k} regiones: {v:.6f}")
 
+# python -m src.app.1_b_LBG_RANDOM

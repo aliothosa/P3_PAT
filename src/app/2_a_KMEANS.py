@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 NUMERO_PUNTOS = 1_000_000
 PORCENTAJE_ENTRENAMIENTO = 0.8
 MAX_PUNTOS_GRAFICA = 20000
-NUMEROS_CENTROIDES = [8, 16, 64, 256]
+NUMEROS_CENTROIDES = [1, 2, 4, 8, 16, 64, 256]
 RANDOM_STATE = 42
 
 
@@ -21,18 +21,11 @@ rng = np.random.default_rng(RANDOM_STATE)
 indices_muestra = rng.choice(len(puntos_prueba), size=cantidad_grafica, replace=False)
 puntos_muestra = puntos_prueba[indices_muestra]
 
-# ==========================================
-# 3. Configuración de figuras
-# ==========================================
-fig_kmeans, axes_kmeans = plt.subplots(2, 2, figsize=(16, 14), constrained_layout=True)
+fig_kmeans, axes_kmeans = plt.subplots(4, 2, figsize=(16, 14), constrained_layout=True)
 fig_kmeans.suptitle("Agrupamiento con KMeans", fontsize=16)
 axes_kmeans = axes_kmeans.flatten()
 
-distorsiones_kmeans = {}
 
-# ==========================================
-# 4. Función para graficar en subplots
-# ==========================================
 def graficar_en_eje(ax, puntos, etiquetas, centroides, titulo):
     scatter = ax.scatter(
         puntos[:, 0],
@@ -57,15 +50,11 @@ def graficar_en_eje(ax, puntos, etiquetas, centroides, titulo):
     ax.set_ylabel("Componente 2")
     ax.grid(True, alpha=0.3)
 
-# ==========================================
-# 5. Entrenamiento y gráficas para cada k
-# ==========================================
+
 for idx, numero_centroides in enumerate(NUMEROS_CENTROIDES):
     print(f"\nProcesando {numero_centroides} regiones...")
 
-    # =========================
-    # KMeans
-    # =========================
+
     kmeans = KMeans(
         n_clusters=numero_centroides,
         random_state=RANDOM_STATE,
@@ -84,17 +73,10 @@ for idx, numero_centroides in enumerate(NUMEROS_CENTROIDES):
         f"KMeans - {numero_centroides} clusters"
     )
 
-    # Distorsión KMeans
-    distorsion_kmeans = np.sum(
-        (puntos_muestra - centroides_kmeans[etiquetas_kmeans]) ** 2
-    )
-    distorsiones_kmeans[numero_centroides] = distorsion_kmeans
 
-# ==========================================
-# 6. Mostrar ventanas
-# ==========================================
+plt.savefig("src/output/2_a_kmeans_cuantizacion.png", dpi=300)
 plt.show()
 
-print("\n=== Distorsiones KMeans ===")
-for k, v in distorsiones_kmeans.items():
-    print(f"{k} clusters: {v:.6f}")
+
+    
+# python -m src.app.2_a_KMEANS

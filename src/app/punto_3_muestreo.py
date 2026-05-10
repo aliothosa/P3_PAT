@@ -1,12 +1,3 @@
-"""
-Punto 3 - Muestreo / carga de audios.
-
-Cambios importantes:
-- Conserva metadatos por audio: etiqueta, archivo, ruta, señal y frecuencia de muestreo.
-- Usa orden natural de archivos: uno_1.wav, uno_2.wav, ..., uno_10.wav.
-  Esto evita que sorted() ponga uno_10.wav antes de uno_1.wav.
-"""
-
 import os
 import re
 from typing import Dict, List, Optional, Tuple
@@ -17,12 +8,12 @@ import numpy as np
 
 # Ruta esperada si ejecutas desde la raíz del proyecto con:
 # python -m src.app.punto_6_confusion
-audio_base_path = "src/resources/audio"
+ruta_base_audio = "src/resources/audio"
 
 AudioCrudo = Dict[str, object]
 
 
-def clave_orden_natural(nombre: str) -> Tuple[object, ...]:
+def obtener_clave_orden_natural(nombre: str) -> Tuple[object, ...]:
     """
     Ordena cadenas con números de forma natural.
 
@@ -36,21 +27,18 @@ def clave_orden_natural(nombre: str) -> Tuple[object, ...]:
     return tuple(int(parte) if parte.isdigit() else parte.lower() for parte in partes)
 
 
-def muestreo_audios(
-    base_path: Optional[str] = None,
-    sr: Optional[int] = None,
-) -> Dict[str, List[AudioCrudo]]:
+def cargar_audios(ruta_base: Optional[str] = None, frecuencia_muestreo: Optional[int] = None) -> Dict[str, List[AudioCrudo]]:
     """
     Carga audios WAV agrupados por etiqueta.
 
     Estructura esperada:
         src/resources/audio/<etiqueta>/<archivo>.wav
 
-    Args:
-        base_path: Ruta base donde están las carpetas de etiquetas.
-        sr: Frecuencia de muestreo deseada. Si es None, conserva la original.
+    Argumentos:
+        ruta_base: Ruta base donde están las carpetas de etiquetas.
+        frecuencia_muestreo: Frecuencia de muestreo deseada. Si es None, conserva la original.
 
-    Returns:
+    Retorna:
         {
             etiqueta: [
                 {
@@ -58,7 +46,7 @@ def muestreo_audios(
                     "archivo": str,
                     "ruta": str,
                     "senal": np.ndarray,
-                    "sr": int,
+                    "frecuencia_muestreo": int,
                     "duracion_segundos": float,
                 },
                 ...
@@ -66,31 +54,31 @@ def muestreo_audios(
             ...
         }
     """
-    if base_path is None:
-        base_path = audio_base_path
+    if ruta_base is None:
+        ruta_base = ruta_base_audio
 
-    if not os.path.isdir(base_path):
+    if not os.path.isdir(ruta_base):
         raise FileNotFoundError(
-            f"No existe la carpeta de audios: {base_path}. "
-            "Ejecuta desde la raíz del proyecto o ajusta audio_base_path."
+            f"No existe la carpeta de audios: {ruta_base}. "
+            "Ejecuta desde la raíz del proyecto o ajusta ruta_base_audio."
         )
 
     audios: Dict[str, List[AudioCrudo]] = {}
 
-    for etiqueta in sorted(os.listdir(base_path), key=clave_orden_natural):
-        etiqueta_path = os.path.join(base_path, etiqueta)
+    for etiqueta in sorted(os.listdir(ruta_base), key=obtener_clave_orden_natural):
+        ruta_etiqueta = os.path.join(ruta_base, etiqueta)
 
-        if not os.path.isdir(etiqueta_path):
+        if not os.path.isdir(ruta_etiqueta):
             continue
 
         audios[etiqueta] = []
 
-        for archivo in sorted(os.listdir(etiqueta_path), key=clave_orden_natural):
+        for archivo in sorted(os.listdir(ruta_etiqueta), key=obtener_clave_orden_natural):
             if not archivo.lower().endswith(".wav"):
                 continue
 
-            ruta_completa = os.path.join(etiqueta_path, archivo)
-            senal, sr_real = librosa.load(ruta_completa, sr=sr, mono=True)
+            ruta_completa = os.path.join(ruta_etiqueta, archivo)
+            senal, frecuencia_real = librosa.load(ruta_completa, sr=frecuencia_muestreo, mono=True)
             senal = np.asarray(senal, dtype=np.float64)
 
             audios[etiqueta].append(
@@ -99,8 +87,8 @@ def muestreo_audios(
                     "archivo": archivo,
                     "ruta": ruta_completa,
                     "senal": senal,
-                    "sr": sr_real,
-                    "duracion_segundos": len(senal) / sr_real if sr_real else 0.0,
+                    "frecuencia_muestreo": frecuencia_real,
+                    "duracion_segundos": len(senal) / frecuencia_real if frecuencia_real else 0.0,
                 }
             )
 
@@ -108,7 +96,7 @@ def muestreo_audios(
 
 
 if __name__ == "__main__":
-    audios = muestreo_audios()
+    audios = cargar_audios()
     print("=== Punto 3: Audios cargados ===")
     for etiqueta, lista_audios in audios.items():
         archivos = [audio["archivo"] for audio in lista_audios]

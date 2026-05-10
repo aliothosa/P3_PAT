@@ -9,3 +9,4 @@ with open(os.path.join(DST_DIR, "tuplas.csv"), "w") as f:
         tupla = generadorDeTuplas(0.0, 1.0)
         f.write(f"{tupla[0]},{tupla[1]}\n")
 
+# python -m src.app.1_a_generacion

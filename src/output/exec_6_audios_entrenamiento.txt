@@ -1,0 +1,163 @@
+=== Punto 6: Matriz de Confusión por Audio ===
+
+Procesando audios con recorte por potencia...
+
+Entrenando cuantizadores con audios de entrenamiento...
+
+Resumen de cuantizadores:
+  cinco: audios=10 | vectores=582 | centroides=32
+  cuatro: audios=10 | vectores=425 | centroides=32
+  diez: audios=10 | vectores=619 | centroides=32
+  dos: audios=10 | vectores=808 | centroides=32
+  nueve: audios=10 | vectores=816 | centroides=32
+  ocho: audios=10 | vectores=413 | centroides=32
+  seis: audios=10 | vectores=521 | centroides=32
+  siete: audios=10 | vectores=474 | centroides=32
+  tres: audios=10 | vectores=642 | centroides=32
+  uno: audios=10 | vectores=832 | centroides=32
+
+Extrayendo LPC/autocorrelaciones de audios de prueba...
+Etiquetas encontradas: ['uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve', 'diez']
+
+Clasificando audios completos...
+
+--- RESULTADOS POR AUDIO ---
+Cada fila es una predicción final de un archivo completo.
+
+ archivo=cinco_1.wav | real=cinco | predicha=cinco | marcos=49 | recorte=768:4576 | mejores=[cinco:0.1050, siete:0.1194, diez:0.1420]
+ archivo=cinco_2.wav | real=cinco | predicha=cinco | marcos=67 | recorte=1152:5536 | mejores=[cinco:0.0487, siete:0.0552, diez:0.0668]
+ archivo=cinco_3.wav | real=cinco | predicha=cinco | marcos=64 | recorte=960:5152 | mejores=[cinco:0.0361, siete:0.0470, dos:0.0515]
+ archivo=cinco_4.wav | real=cinco | predicha=cinco | marcos=65 | recorte=960:5216 | mejores=[cinco:0.0521, siete:0.0659, dos:0.0744]
+ archivo=cinco_5.wav | real=cinco | predicha=cinco | marcos=51 | recorte=1024:4832 | mejores=[cinco:0.0786, siete:0.0956, diez:0.0993]
+ archivo=cinco_6.wav | real=cinco | predicha=cinco | marcos=58 | recorte=576:4384 | mejores=[cinco:0.0437, siete:0.0647, diez:0.0667]
+ archivo=cinco_7.wav | real=cinco | predicha=cinco | marcos=49 | recorte=896:4128 | mejores=[cinco:0.1088, siete:0.1305, diez:0.1412]
+ archivo=cinco_8.wav | real=cinco | predicha=cinco | marcos=62 | recorte=832:4896 | mejores=[cinco:0.0585, siete:0.0729, diez:0.0865]
+ archivo=cinco_9.wav | real=cinco | predicha=cinco | marcos=61 | recorte=512:4512 | mejores=[cinco:0.0691, siete:0.1057, dos:0.1086]
+ archivo=cinco_10.wav | real=cinco | predicha=cinco | marcos=56 | recorte=960:4640 | mejores=[cinco:0.0707, siete:0.0854, diez:0.1044]
+ archivo=cuatro_1.wav | real=cuatro | predicha=cuatro | marcos=37 | recorte=192:2656 | mejores=[cuatro:0.0185, dos:0.0267, ocho:0.0278]
+ archivo=cuatro_2.wav | real=cuatro | predicha=cuatro | marcos=45 | recorte=0:2976 | mejores=[cuatro:0.0187, ocho:0.0243, dos:0.0267]
+ archivo=cuatro_3.wav | real=cuatro | predicha=cuatro | marcos=45 | recorte=0:2976 | mejores=[cuatro:0.0158, ocho:0.0200, dos:0.0203]
+ archivo=cuatro_4.wav | real=cuatro | predicha=cuatro | marcos=41 | recorte=0:2720 | mejores=[cuatro:0.0133, dos:0.0208, ocho:0.0209]
+ archivo=cuatro_5.wav | real=cuatro | predicha=cuatro | marcos=47 | recorte=192:3296 | mejores=[cuatro:0.0293, ocho:0.0426, nueve:0.0452]
+ archivo=cuatro_6.wav | real=cuatro | predicha=cuatro | marcos=49 | recorte=0:3232 | mejores=[cuatro:0.0223, ocho:0.0345, dos:0.0409]
+ archivo=cuatro_7.wav | real=cuatro | predicha=cuatro | marcos=41 | recorte=0:2720 | mejores=[cuatro:0.0443, ocho:0.0550, uno:0.0582]
+ archivo=cuatro_8.wav | real=cuatro | predicha=cuatro | marcos=34 | recorte=0:2272 | mejores=[cuatro:0.0387, ocho:0.0563, dos:0.0571]
+ archivo=cuatro_9.wav | real=cuatro | predicha=cuatro | marcos=43 | recorte=0:2848 | mejores=[cuatro:0.0241, ocho:0.0345, dos:0.0375]
+ archivo=cuatro_10.wav | real=cuatro | predicha=cuatro | marcos=43 | recorte=64:2912 | mejores=[cuatro:0.0289, dos:0.0361, ocho:0.0364]
+ archivo=diez_1-2.wav | real=diez | predicha=diez | marcos=56 | recorte=192:5024 | mejores=[diez:0.0543, seis:0.0658, siete:0.0658]
+ archivo=diez_1.wav | real=diez | predicha=diez | marcos=45 | recorte=1088:5280 | mejores=[diez:0.0515, seis:0.0676, siete:0.0773]
+ archivo=diez_2.wav | real=diez | predicha=diez | marcos=60 | recorte=64:5024 | mejores=[diez:0.0788, siete:0.0974, seis:0.1122]
+ archivo=diez_3.wav | real=diez | predicha=diez | marcos=61 | recorte=768:5472 | mejores=[diez:0.0688, siete:0.0794, seis:0.0873]
+ archivo=diez_4.wav | real=diez | predicha=diez | marcos=63 | recorte=320:5216 | mejores=[diez:0.0750, seis:0.0993, siete:0.1021]
+ archivo=diez_5.wav | real=diez | predicha=diez | marcos=61 | recorte=320:6112 | mejores=[diez:0.0554, siete:0.0675, seis:0.0688]
+ archivo=diez_6.wav | real=diez | predicha=diez | marcos=60 | recorte=192:5344 | mejores=[diez:0.0622, siete:0.0698, seis:0.0744]
+ archivo=diez_7.wav | real=diez | predicha=diez | marcos=70 | recorte=128:5664 | mejores=[diez:0.1081, seis:0.1574, siete:0.1936]
+ archivo=diez_8.wav | real=diez | predicha=diez | marcos=71 | recorte=768:5600 | mejores=[diez:0.0537, seis:0.0651, siete:0.0709]
+ archivo=diez_9.wav | real=diez | predicha=diez | marcos=72 | recorte=384:5984 | mejores=[diez:0.0504, siete:0.0610, seis:0.0672]
+ archivo=dos_1.wav | real=dos | predicha=dos | marcos=80 | recorte=0:5216 | mejores=[dos:0.0564, ocho:0.0757, cuatro:0.0836]
+ archivo=dos_2.wav | real=dos | predicha=dos | marcos=93 | recorte=0:6048 | mejores=[dos:0.0255, ocho:0.0315, cuatro:0.0346]
+ archivo=dos_3.wav | real=dos | predicha=dos | marcos=83 | recorte=0:5408 | mejores=[dos:0.0267, ocho:0.0326, cuatro:0.0356]
+ archivo=dos_4.wav | real=dos | predicha=dos | marcos=73 | recorte=0:4768 | mejores=[dos:0.0236, ocho:0.0283, cuatro:0.0310]
+ archivo=dos_5.wav | real=dos | predicha=dos | marcos=77 | recorte=0:5024 | mejores=[dos:0.0301, ocho:0.0387, cuatro:0.0407]
+ archivo=dos_6.wav | real=dos | predicha=dos | marcos=66 | recorte=0:4320 | mejores=[dos:0.0223, ocho:0.0264, uno:0.0296]
+ archivo=dos_7.wav | real=dos | predicha=dos | marcos=69 | recorte=0:4512 | mejores=[dos:0.0202, ocho:0.0261, uno:0.0262]
+ archivo=dos_8.wav | real=dos | predicha=dos | marcos=103 | recorte=0:6688 | mejores=[dos:0.0317, ocho:0.0457, cinco:0.0475]
+ archivo=dos_9.wav | real=dos | predicha=dos | marcos=85 | recorte=512:6048 | mejores=[dos:0.0259, ocho:0.0342, uno:0.0352]
+ archivo=dos_10.wav | real=dos | predicha=dos | marcos=79 | recorte=832:5984 | mejores=[dos:0.0309, ocho:0.0366, cuatro:0.0369]
+ archivo=nueve_1.wav | real=nueve | predicha=nueve | marcos=82 | recorte=384:5728 | mejores=[nueve:0.0566, tres:0.0753, ocho:0.0815]
+ archivo=nueve_2.wav | real=nueve | predicha=nueve | marcos=83 | recorte=128:5536 | mejores=[nueve:0.0890, tres:0.1100, ocho:0.1120]
+ archivo=nueve_3.wav | real=nueve | predicha=nueve | marcos=99 | recorte=256:6688 | mejores=[nueve:0.0494, tres:0.0713, ocho:0.0725]
+ archivo=nueve_4.wav | real=nueve | predicha=nueve | marcos=68 | recorte=384:4832 | mejores=[nueve:0.0463, tres:0.0611, ocho:0.0665]
+ archivo=nueve_5.wav | real=nueve | predicha=nueve | marcos=102 | recorte=0:6624 | mejores=[nueve:0.0579, tres:0.0783, ocho:0.0833]
+ archivo=nueve_6.wav | real=nueve | predicha=nueve | marcos=74 | recorte=64:4896 | mejores=[nueve:0.0503, ocho:0.0683, tres:0.0713]
+ archivo=nueve_7.wav | real=nueve | predicha=nueve | marcos=52 | recorte=0:4384 | mejores=[nueve:0.0562, tres:0.0769, ocho:0.0853]
+ archivo=nueve_8.wav | real=nueve | predicha=nueve | marcos=94 | recorte=0:6112 | mejores=[nueve:0.0469, tres:0.0627, diez:0.0717]
+ archivo=nueve_9.wav | real=nueve | predicha=nueve | marcos=87 | recorte=192:5856 | mejores=[nueve:0.0568, tres:0.0786, ocho:0.0799]
+ archivo=nueve_10.wav | real=nueve | predicha=nueve | marcos=75 | recorte=128:5024 | mejores=[nueve:0.0450, ocho:0.0613, tres:0.0683]
+ archivo=ocho_1.wav | real=ocho | predicha=ocho | marcos=29 | recorte=2048:5216 | mejores=[ocho:0.1479, siete:0.2581, cinco:0.2835]
+ archivo=ocho_2.wav | real=ocho | predicha=ocho | marcos=48 | recorte=0:3168 | mejores=[ocho:0.0317, dos:0.0404, nueve:0.0432]
+ archivo=ocho_3.wav | real=ocho | predicha=ocho | marcos=42 | recorte=0:2784 | mejores=[ocho:0.0632, dos:0.0861, cuatro:0.0909]
+ archivo=ocho_4.wav | real=ocho | predicha=ocho | marcos=42 | recorte=0:2848 | mejores=[ocho:0.0659, dos:0.0841, cuatro:0.0894]
+ archivo=ocho_5.wav | real=ocho | predicha=ocho | marcos=41 | recorte=0:2720 | mejores=[ocho:0.0735, dos:0.1026, cuatro:0.1054]
+ archivo=ocho_6.wav | real=ocho | predicha=ocho | marcos=28 | recorte=2432:5408 | mejores=[ocho:0.1764, seis:0.2913, siete:0.3112]
+ archivo=ocho_7.wav | real=ocho | predicha=ocho | marcos=51 | recorte=128:3488 | mejores=[ocho:0.0514, cuatro:0.0631, dos:0.0694]
+ archivo=ocho_8.wav | real=ocho | predicha=ocho | marcos=46 | recorte=0:3040 | mejores=[ocho:0.0548, dos:0.0696, cuatro:0.0757]
+ archivo=ocho_9.wav | real=ocho | predicha=ocho | marcos=42 | recorte=0:2784 | mejores=[ocho:0.0647, nueve:0.0978, cuatro:0.1018]
+ archivo=ocho_10.wav | real=ocho | predicha=ocho | marcos=44 | recorte=0:2912 | mejores=[ocho:0.0510, cuatro:0.0625, dos:0.0776]
+ archivo=seis_1.wav | real=seis | predicha=seis | marcos=41 | recorte=2112:6048 | mejores=[seis:0.0592, diez:0.0722, siete:0.0754]
+ archivo=seis_2.wav | real=seis | predicha=seis | marcos=52 | recorte=1344:5536 | mejores=[seis:0.1021, siete:0.1197, cinco:0.1446]
+ archivo=seis_3.wav | real=seis | predicha=seis | marcos=44 | recorte=1088:5152 | mejores=[seis:0.0781, siete:0.0995, diez:0.1143]
+ archivo=seis_4.wav | real=seis | predicha=seis | marcos=48 | recorte=1408:5344 | mejores=[seis:0.0777, siete:0.0969, diez:0.1062]
+ archivo=seis_5.wav | real=seis | predicha=seis | marcos=47 | recorte=1664:5600 | mejores=[seis:0.0810, siete:0.1035, diez:0.1194]
+ archivo=seis_6.wav | real=seis | predicha=seis | marcos=59 | recorte=1984:5984 | mejores=[seis:0.0786, siete:0.1045, diez:0.1369]
+ archivo=seis_7.wav | real=seis | predicha=seis | marcos=60 | recorte=1216:5856 | mejores=[seis:0.0791, siete:0.0985, diez:0.1241]
+ archivo=seis_8.wav | real=seis | predicha=seis | marcos=57 | recorte=1664:5408 | mejores=[seis:0.1019, cinco:0.1395, siete:0.1409]
+ archivo=seis_9.wav | real=seis | predicha=seis | marcos=56 | recorte=1536:5984 | mejores=[seis:0.1110, siete:0.1540, diez:0.1669]
+ archivo=seis_10.wav | real=seis | predicha=seis | marcos=57 | recorte=1344:5280 | mejores=[seis:0.0918, siete:0.1055, diez:0.1210]
+ archivo=siete_1.wav | real=siete | predicha=siete | marcos=37 | recorte=256:3488 | mejores=[siete:0.1134, cinco:0.1487, seis:0.1622]
+ archivo=siete_2.wav | real=siete | predicha=siete | marcos=40 | recorte=1600:5216 | mejores=[siete:0.0637, diez:0.0775, seis:0.0830]
+ archivo=siete_3.wav | real=siete | predicha=siete | marcos=55 | recorte=1792:5536 | mejores=[siete:0.0895, seis:0.1095, diez:0.1153]
+ archivo=siete_4.wav | real=siete | predicha=siete | marcos=48 | recorte=1088:4576 | mejores=[siete:0.0705, diez:0.0810, seis:0.0975]
+ archivo=siete_5.wav | real=siete | predicha=siete | marcos=42 | recorte=1472:5024 | mejores=[siete:0.0856, seis:0.1000, diez:0.1154]
+ archivo=siete_6.wav | real=siete | predicha=siete | marcos=44 | recorte=1472:4960 | mejores=[siete:0.0768, diez:0.1074, seis:0.1123]
+ archivo=siete_7.wav | real=siete | predicha=siete | marcos=58 | recorte=1536:5344 | mejores=[siete:0.0615, seis:0.0804, diez:0.0822]
+ archivo=siete_8.wav | real=siete | predicha=siete | marcos=45 | recorte=1472:4960 | mejores=[siete:0.1109, diez:0.1534, seis:0.1549]
+ archivo=siete_9.wav | real=siete | predicha=siete | marcos=59 | recorte=1408:5280 | mejores=[siete:0.0781, cinco:0.1068, diez:0.1088]
+ archivo=siete_10.wav | real=siete | predicha=siete | marcos=46 | recorte=1664:5152 | mejores=[siete:0.0890, cinco:0.1226, seis:0.1245]
+ archivo=tres_1.wav | real=tres | predicha=tres | marcos=59 | recorte=256:4128 | mejores=[tres:0.0685, siete:0.0981, diez:0.0992]
+ archivo=tres_2.wav | real=tres | predicha=tres | marcos=66 | recorte=0:4320 | mejores=[tres:0.0672, ocho:0.0978, nueve:0.1007]
+ archivo=tres_3.wav | real=tres | predicha=tres | marcos=61 | recorte=0:4000 | mejores=[tres:0.0638, nueve:0.0761, diez:0.0908]
+ archivo=tres_4.wav | real=tres | predicha=tres | marcos=67 | recorte=0:4384 | mejores=[tres:0.0770, nueve:0.0914, diez:0.1073]
+ archivo=tres_5.wav | real=tres | predicha=tres | marcos=61 | recorte=128:4320 | mejores=[tres:0.0609, nueve:0.0741, diez:0.0884]
+ archivo=tres_6.wav | real=tres | predicha=tres | marcos=66 | recorte=128:4448 | mejores=[tres:0.0551, nueve:0.0678, dos:0.0701]
+ archivo=tres_7.wav | real=tres | predicha=tres | marcos=66 | recorte=0:4320 | mejores=[tres:0.0623, nueve:0.0792, siete:0.0905]
+ archivo=tres_8.wav | real=tres | predicha=tres | marcos=68 | recorte=0:4448 | mejores=[tres:0.0747, nueve:0.0880, siete:0.1029]
+ archivo=tres_9.wav | real=tres | predicha=tres | marcos=62 | recorte=0:4064 | mejores=[tres:0.0560, nueve:0.0641, siete:0.0736]
+ archivo=tres_10.wav | real=tres | predicha=tres | marcos=66 | recorte=0:4320 | mejores=[tres:0.0740, nueve:0.0870, siete:0.1026]
+ archivo=uno_1.wav | real=uno | predicha=uno | marcos=82 | recorte=64:5408 | mejores=[uno:0.0370, cinco:0.0484, dos:0.0526]
+ archivo=uno_2.wav | real=uno | predicha=uno | marcos=91 | recorte=704:6624 | mejores=[uno:0.0240, dos:0.0388, cuatro:0.0392]
+ archivo=uno_3.wav | real=uno | predicha=uno | marcos=91 | recorte=0:5920 | mejores=[uno:0.0187, cuatro:0.0276, cinco:0.0283]
+ archivo=uno_4.wav | real=uno | predicha=uno | marcos=83 | recorte=0:5408 | mejores=[uno:0.0251, cinco:0.0456, nueve:0.0510]
+ archivo=uno_5.wav | real=uno | predicha=uno | marcos=80 | recorte=0:5216 | mejores=[uno:0.0252, cinco:0.0418, dos:0.0462]
+ archivo=uno_6.wav | real=uno | predicha=uno | marcos=84 | recorte=0:5472 | mejores=[uno:0.0197, dos:0.0260, cinco:0.0262]
+ archivo=uno_7.wav | real=uno | predicha=uno | marcos=81 | recorte=0:5280 | mejores=[uno:0.0148, cinco:0.0181, nueve:0.0194]
+ archivo=uno_8.wav | real=uno | predicha=uno | marcos=85 | recorte=0:5536 | mejores=[uno:0.0201, dos:0.0307, cinco:0.0308]
+ archivo=uno_9.wav | real=uno | predicha=uno | marcos=68 | recorte=64:4512 | mejores=[uno:0.0186, cinco:0.0252, siete:0.0263]
+ archivo=uno_10.wav | real=uno | predicha=uno | marcos=87 | recorte=320:5984 | mejores=[uno:0.0159, cinco:0.0212, ocho:0.0224]
+
+--- MATRIZ DE CONFUSIÓN POR AUDIO ---
+Filas: Etiqueta real | Columnas: Etiqueta predicha
+
+             uno     dos    tres  cuatro   cinco    seis   siete    ocho   nueve    diez
+    uno       10       0       0       0       0       0       0       0       0       0
+    dos        0      10       0       0       0       0       0       0       0       0
+   tres        0       0      10       0       0       0       0       0       0       0
+ cuatro        0       0       0      10       0       0       0       0       0       0
+  cinco        0       0       0       0      10       0       0       0       0       0
+   seis        0       0       0       0       0      10       0       0       0       0
+  siete        0       0       0       0       0       0      10       0       0       0
+   ocho        0       0       0       0       0       0       0      10       0       0
+  nueve        0       0       0       0       0       0       0       0      10       0
+   diez        0       0       0       0       0       0       0       0       0      10
+Gráfica guardada en: matriz_confusion_entrenamiento.png
+
+--- MÉTRICAS DE DESEMPEÑO POR AUDIO ---
+Audios evaluados: 100
+Audios correctos: 100
+Exactitud global: 1.0000
+Precisión promedio: 1.0000
+Sensibilidad promedio: 1.0000
+
+--- MÉTRICAS POR CLASE ---
+uno: Precision=1.0000, Sensibilidad=1.0000
+dos: Precision=1.0000, Sensibilidad=1.0000
+tres: Precision=1.0000, Sensibilidad=1.0000
+cuatro: Precision=1.0000, Sensibilidad=1.0000
+cinco: Precision=1.0000, Sensibilidad=1.0000
+seis: Precision=1.0000, Sensibilidad=1.0000
+siete: Precision=1.0000, Sensibilidad=1.0000
+ocho: Precision=1.0000, Sensibilidad=1.0000
+nueve: Precision=1.0000, Sensibilidad=1.0000
+diez: Precision=1.0000, Sensibilidad=1.0000
+
+ Punto 6 completado

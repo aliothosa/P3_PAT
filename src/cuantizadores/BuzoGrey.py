@@ -2,13 +2,8 @@ import os
 from typing import List
 
 import numpy as np
-from src.utils.filtroWiener import filtroWiener
-from src.utils.distancias import distanciaEuclidiana, itakuraSaito
-from src.data.SegmentoDePotencia import Segmento
-import numpy as np
 from src.utils.distancias import distanciaEuclidiana
 from math import log2
-from multiprocessing import Process, Pool
 from typing import Dict
 from pathlib import Path
 import pickle
