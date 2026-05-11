@@ -33,15 +33,15 @@ def ordenar_etiquetas(etiquetas: List[str]) -> List[str]:
     restantes = sorted([etiqueta for etiqueta in etiquetas if etiqueta not in ORDEN_ETIQUETAS])
     return conocidas + restantes
 
+"""
+Extrae LPC/autocorrelaciones de audios de prueba.
 
+Para probar todos los audios:
+    omitir_primeros=0
+    maximo_archivos=None
+"""
 def extraer_vectores_prueba(senales_por_etiqueta: dict, orden: int = 12, omitir_primeros: int = 10, maximo_archivos: Optional[int] = 5) -> Dict[str, List[AudioLPC]]:
-    """
-    Extrae LPC/autocorrelaciones de audios de prueba.
 
-    Para probar todos los audios:
-        omitir_primeros=0
-        maximo_archivos=None
-    """
     return extraer_vectores_lpc(
         senales_por_etiqueta,
         orden=orden,
@@ -54,13 +54,9 @@ def obtener_mejores_distorsiones(distorsiones: Dict[str, float], cantidad: int =
     return sorted(distorsiones.items(), key=lambda elemento: elemento[1])[:cantidad]
 
 
+# Construye matriz de confusión evaluando una vez por audio.
 def construir_matriz_confusion_por_audio(vectores_prueba: Dict[str, List[AudioLPC]], cuantizadores: Dict[str, Cuantizador], etiquetas: List[str], porcentaje_recorte_superior: float = 0.10) -> Tuple[np.ndarray, List[ResultadoAudio]]:
-    """
-    Construye matriz de confusión evaluando una vez por audio.
 
-    Filas: etiqueta real.
-    Columnas: etiqueta predicha.
-    """
     matriz_confusion = np.zeros((len(etiquetas), len(etiquetas)), dtype=int)
     etiqueta_a_indice = {etiqueta: indice for indice, etiqueta in enumerate(etiquetas)}
     resultados: List[ResultadoAudio] = []
@@ -154,18 +150,9 @@ def calcular_metricas(matriz_confusion: np.ndarray) -> dict:
     }
 
 
-
+# Muestra la matriz de confusión como mapa de calor con matplotlib.
 def graficar_matriz_confusion(matriz_confusion: np.ndarray, etiquetas: List[str], normalizar: bool = False, titulo: str = "Matriz de confusión por audio", ruta_salida: Optional[str] = None) -> None:
-    """
-    Muestra la matriz de confusión como mapa de calor con matplotlib.
 
-    Args:
-        matriz_confusion: Matriz donde las filas son etiquetas reales y las columnas predichas.
-        etiquetas: Nombres de las clases en el mismo orden que la matriz.
-        normalizar: Si es True, muestra proporciones por fila en lugar de conteos absolutos.
-        titulo: Título de la gráfica.
-        ruta_salida: Ruta opcional para guardar la imagen, por ejemplo "matriz_confusion.png".
-    """
     matriz = np.asarray(matriz_confusion, dtype=float)
 
     if normalizar:

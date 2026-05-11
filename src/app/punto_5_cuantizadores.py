@@ -8,26 +8,17 @@ from src.app.punto_4_hamming_filtro import procesar_audios
 
 # Importar filtroWiener desde utils.
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from src.utils.filtroWiener import filtroWiener as filtro_wiener  # noqa: E402
+from src.utils.filtroWiener import filtroWiener as filtro_wiener  
 
 AudioLPC = Dict[str, object]
 Cuantizador = Dict[str, object]
 
+# CONSTANTES
 EPSILON_ESTABILIDAD = 1e-12
-
-# Si tus coeficientes LPC vienen como predictor:
-#   x[n] ≈ a1*x[n-1] + a2*x[n-2] + ...
-# el filtro de error es:
-#   A(z) = 1 - a1 z^-1 - a2 z^-2 - ...
-# Por eso el signo por defecto es -1.0.
-# Si el resultado empeora, cambia este valor a +1.0 y vuelve a correr.
 SIGNO_COEFICIENTES_LPC_EN_FILTRO = -1.0
 
-
+# Normaliza r por r(0) para que el volumen del audio no domine la distancia.
 def normalizar_autocorrelacion(autocorrelacion: np.ndarray) -> np.ndarray:
-    """
-    Normaliza r por r(0) para que el volumen del audio no domine la distancia.
-    """
     autocorrelacion = np.asarray(autocorrelacion, dtype=np.float64).copy()
 
     if len(autocorrelacion) == 0:
@@ -38,18 +29,9 @@ def normalizar_autocorrelacion(autocorrelacion: np.ndarray) -> np.ndarray:
 
     return autocorrelacion
 
-
+# Construye r = [r(0), r(1), ..., r(M)] usando la salida de filtroWiener
 def extraer_autocorrelacion_desde_wiener(matriz_correlacion: np.ndarray, vector_correlacion: np.ndarray, orden: int) -> np.ndarray:
-    """
-    Construye r = [r(0), r(1), ..., r(M)] usando la salida de filtroWiener.
 
-    En tu implementación:
-    - matriz_correlacion[0, 0] contiene r(0)
-    - vector_correlacion contiene los lags usados para resolver el predictor.
-
-    Como autocorrelación es simétrica para la misma señal, usamos esos valores como
-    r(1), ..., r(M).
-    """
     matriz_correlacion = np.asarray(matriz_correlacion, dtype=np.float64)
     vector_correlacion = np.asarray(vector_correlacion, dtype=np.float64).reshape(-1)
 
@@ -61,17 +43,17 @@ def extraer_autocorrelacion_desde_wiener(matriz_correlacion: np.ndarray, vector_
 
     return normalizar_autocorrelacion(autocorrelacion)
 
+"""
+Calcula LPC y conserva la matriz/vector de autocorrelación que devuelve filtroWiener.
 
+Retorna:
+    coeficientes_lpc: forma (orden,)
+    autocorrelacion_marco: forma (orden + 1,), normalizado por r(0)
+    matriz_correlacion: forma (orden, orden)
+    vector_correlacion: forma (orden,)
+"""
 def calcular_lpc_y_correlaciones(marco: np.ndarray, orden: int = 12) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """
-    Calcula LPC y conserva la matriz/vector de autocorrelación que devuelve filtroWiener.
 
-    Retorna:
-        coeficientes_lpc: forma (orden,)
-        autocorrelacion_marco: forma (orden + 1,), normalizado por r(0)
-        matriz_correlacion: forma (orden, orden)
-        vector_correlacion: forma (orden,)
-    """
     marco = np.asarray(marco, dtype=np.float64)
 
     if len(marco) <= orden or float(np.mean(marco ** 2)) <= EPSILON_ESTABILIDAD:
@@ -116,14 +98,10 @@ def calcular_coeficientes_lpc(marco: np.ndarray, orden: int = 12) -> np.ndarray:
     coeficientes, _, _, _ = calcular_lpc_y_correlaciones(marco, orden=orden)
     return coeficientes
 
-
+# Calcula r_a(0), r_a(1), ..., r_a(M) para uno o muchos filtros LPC.
 def calcular_autocorrelacion_filtros_lpc(coeficientes_lpc: np.ndarray, signo_coeficientes: float = SIGNO_COEFICIENTES_LPC_EN_FILTRO) -> np.ndarray:
-    """
-    Calcula r_a(0), r_a(1), ..., r_a(M) para uno o muchos filtros LPC.
-
-    coeficientes_lpc puede tener forma:
-        (orden,) o (numero_centroides, orden)
-    """
+    
+    # coeficientes_lpc puede tener forma: (orden,) o (numero_centroides, orden)
     coeficientes_lpc = np.asarray(coeficientes_lpc, dtype=np.float64)
     es_unico = coeficientes_lpc.ndim == 1
 
@@ -146,21 +124,17 @@ def calcular_autocorrelacion_filtros_lpc(coeficientes_lpc: np.ndarray, signo_coe
 
     return autocorrelaciones_filtros[0] if es_unico else autocorrelaciones_filtros
 
+"""
+Calcula la distancia de Itakura-Saito de cada marco contra cada centroide.
+
+Usa la fórmula:
+    d = r(0) r_a(0) + 2 * sum_{n=1}^{M} r(n) r_a(n)
+
+Retorna:
+    matriz de distancias con forma (numero_marcos, numero_centroides)
+"""
 
 def calcular_distancias_itakura_saito_autocorrelacion(autocorrelaciones_marcos: np.ndarray, centroides_lpc: np.ndarray) -> np.ndarray:
-    """
-    Calcula la distancia de Itakura-Saito de cada marco contra cada centroide.
-
-    Usa la fórmula:
-        d = r(0) r_a(0) + 2 * sum_{n=1}^{M} r(n) r_a(n)
-
-    Argumentos:
-        autocorrelaciones_marcos: forma (numero_marcos, orden + 1)
-        centroides_lpc: forma (numero_centroides, orden)
-
-    Retorna:
-        matriz de distancias con forma (numero_marcos, numero_centroides)
-    """
     autocorrelaciones_marcos = np.asarray(autocorrelaciones_marcos, dtype=np.float64)
     centroides_lpc = np.asarray(centroides_lpc, dtype=np.float64)
 
@@ -183,21 +157,22 @@ def calcular_distancias_itakura_saito_autocorrelacion(autocorrelaciones_marcos: 
     return distancias
 
 
-# Alias para conservar compatibilidad con el nombre usado en explicaciones anteriores.
+# Alias para conservar compatibilidad con el nombre usado en explicaciones anteriores
 def calcular_distancia_itakura_saito_desde_autocorrelacion(autocorrelacion_marco: np.ndarray, lpc_candidato: np.ndarray) -> float:
     return float(calcular_distancias_itakura_saito_autocorrelacion(autocorrelacion_marco, lpc_candidato)[0, 0])
 
 
-def extraer_lpc_de_audio(audio_procesado: dict, orden: int = 12) -> Tuple[np.ndarray, np.ndarray, List[np.ndarray], List[np.ndarray]]:
-    """
-    Convierte todos los marcos de un audio procesado en LPC y autocorrelaciones.
+"""
+Convierte todos los marcos de un audio procesado en LPC y autocorrelaciones.
 
-    Retorna:
-        lpcs: forma (numero_marcos, orden)
-        autocorrelaciones: forma (numero_marcos, orden + 1)
-        matrices_correlacion: lista de matrices por marco
-        vectores_correlacion: lista de vectores por marco
-    """
+Retorna:
+    lpcs: forma (numero_marcos, orden)
+    autocorrelaciones: forma (numero_marcos, orden + 1)
+    matrices_correlacion: lista de matrices por marco
+    vectores_correlacion: lista de vectores por marco
+"""
+def extraer_lpc_de_audio(audio_procesado: dict, orden: int = 12) -> Tuple[np.ndarray, np.ndarray, List[np.ndarray], List[np.ndarray]]:
+
     marcos = audio_procesado["marcos"]
 
     lpcs = []
@@ -234,9 +209,7 @@ def extraer_lpc_de_audio(audio_procesado: dict, orden: int = 12) -> Tuple[np.nda
 
 
 def extraer_vectores_lpc(senales_por_etiqueta: Dict[str, List[dict]], orden: int = 12, inicio: int = 0, maximo_archivos: Optional[int] = 10) -> Dict[str, List[AudioLPC]]:
-    """
-    Extrae LPC por audio conservando metadatos.
-    """
+
     vectores_lpc: Dict[str, List[AudioLPC]] = {}
 
     for etiqueta, lista_audios in senales_por_etiqueta.items():
@@ -271,14 +244,16 @@ def extraer_vectores_lpc(senales_por_etiqueta: Dict[str, List[dict]], orden: int
 def validar_potencia_de_dos(valor: int) -> bool:
     return valor >= 1 and (valor & (valor - 1)) == 0
 
+"""
+Algoritmo LBG usando distancia Itakura-Saito para asignar marcos.
+
+Los centroides siguen siendo vectores LPC. La asignación se hace comparando la
+autocorrelación del marco contra la autocorrelación del filtro LPC del centroide.
+
+"""
 
 def crear_cuantizador_lbg(vectores_lpc: np.ndarray, autocorrelaciones: np.ndarray, numero_centroides: int, maximo_iteraciones: int = 80, epsilon: float = 1e-4, perturbacion: float = 0.01) -> Tuple[np.ndarray, List[float]]:
-    """
-    Algoritmo LBG usando distancia Itakura-Saito para asignar marcos.
 
-    Los centroides siguen siendo vectores LPC. La asignación se hace comparando la
-    autocorrelación del marco contra la autocorrelación del filtro LPC del centroide.
-    """
     vectores_lpc = np.asarray(vectores_lpc, dtype=np.float64)
     autocorrelaciones = np.asarray(autocorrelaciones, dtype=np.float64)
 
@@ -349,11 +324,9 @@ def crear_cuantizador_lbg(vectores_lpc: np.ndarray, autocorrelaciones: np.ndarra
 
     return centroides, distorsiones
 
-
+# Entrena un cuantizador por etiqueta.
 def entrenar_cuantizadores(senales_procesadas: Optional[Dict[str, List[dict]]] = None, orden: int = 12, numero_centroides: int = 256, numero_audios_entrenamiento: int = 10, maximo_iteraciones: int = 80, epsilon: float = 1e-4) -> Tuple[Dict[str, List[AudioLPC]], Dict[str, Cuantizador]]:
-    """
-    Entrena un cuantizador por etiqueta.
-    """
+
     if senales_procesadas is None:
         senales_procesadas = procesar_audios()
 
@@ -403,13 +376,14 @@ def entrenar_cuantizadores(senales_procesadas: Optional[Dict[str, List[dict]]] =
 
     return vectores_entrenamiento, cuantizadores
 
+"""
+Promedia eliminando un porcentaje de las distancias más altas.
+
+Sirve para que uno o dos marcos malos no dominen la decisión final del audio.
+"""
 
 def media_recortada(valores: np.ndarray, porcentaje_recorte_superior: float = 0.10) -> float:
-    """
-    Promedia eliminando un porcentaje de las distancias más altas.
 
-    Sirve para que uno o dos marcos malos no dominen la decisión final del audio.
-    """
     valores = np.asarray(valores, dtype=np.float64)
 
     if len(valores) == 0:
@@ -421,18 +395,16 @@ def media_recortada(valores: np.ndarray, porcentaje_recorte_superior: float = 0.
 
     return float(np.mean(valores[:corte_superior]))
 
+"""
+Calcula la distorsión de un audio completo contra un cuantizador.
+Para cada marco:
+    1. Usa r(0), r(1), ..., r(M) del marco.
+    2. Calcula distancia Itakura-Saito contra cada centroide LPC.
+    3. Toma la distancia mínima.
 
+"""
 def calcular_distorsion_audio(autocorrelacion_audio: np.ndarray, centroides_lpc: np.ndarray, porcentaje_recorte_superior: float = 0.10) -> float:
-    """
-    Calcula la distorsión de un audio completo contra un cuantizador.
 
-    Para cada marco:
-        1. Usa r(0), r(1), ..., r(M) del marco.
-        2. Calcula distancia Itakura-Saito contra cada centroide LPC.
-        3. Toma la distancia mínima.
-
-    La distorsión final del audio es una media recortada de esas distancias mínimas.
-    """
     autocorrelacion_audio = np.asarray(autocorrelacion_audio, dtype=np.float64)
 
     if len(autocorrelacion_audio) == 0:
@@ -443,14 +415,14 @@ def calcular_distorsion_audio(autocorrelacion_audio: np.ndarray, centroides_lpc:
 
     return media_recortada(distancias_minimas, porcentaje_recorte_superior=porcentaje_recorte_superior)
 
+"""
+Clasifica un AUDIO COMPLETO.
+
+La predicción es la etiqueta cuyo cuantizador tenga menor distorsión promedio sobre los marcos útiles del audio.
+"""
 
 def clasificar_audio_por_distorsion(autocorrelacion_audio: np.ndarray, cuantizadores: Dict[str, Cuantizador], porcentaje_recorte_superior: float = 0.10) -> Tuple[str, Dict[str, float]]:
-    """
-    Clasifica un AUDIO COMPLETO.
 
-    La predicción es la etiqueta cuyo cuantizador tenga menor distorsión promedio
-    sobre los marcos útiles del audio.
-    """
     distorsiones_por_etiqueta: Dict[str, float] = {}
 
     for etiqueta, cuantizador in cuantizadores.items():

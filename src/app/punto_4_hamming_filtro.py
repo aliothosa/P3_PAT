@@ -7,11 +7,9 @@ from src.app.punto_3_muestreo import cargar_audios
 AudioProcesado = Dict[str, object]
 
 
+
+# Aplica filtro de preénfasis: y[n] = x[n] - coeficiente * x[n - 1]
 def aplicar_preenfasis(audio: np.ndarray, coeficiente: float = 0.95) -> np.ndarray:
-    """
-    Aplica filtro de preénfasis:
-        y[n] = x[n] - coeficiente * x[n - 1]
-    """
     audio = np.asarray(audio, dtype=np.float64)
 
     if len(audio) == 0:
@@ -25,18 +23,7 @@ def aplicar_preenfasis(audio: np.ndarray, coeficiente: float = 0.95) -> np.ndarr
 
 
 def calcular_potencias(audio: np.ndarray, tamano_ventana: int = 160, salto_ventana: int = 64) -> Tuple[np.ndarray, np.ndarray]:
-    """
-    Calcula la potencia de corto tiempo de un audio.
 
-    Argumentos:
-        audio: Señal de audio.
-        tamano_ventana: Tamaño de ventana para medir potencia.
-        salto_ventana: Salto entre ventanas.
-
-    Retorna:
-        potencias: arreglo de potencia por ventana.
-        inicios: índice de muestra donde inicia cada ventana.
-    """
     audio = np.asarray(audio, dtype=np.float64)
 
     if len(audio) == 0:
@@ -55,11 +42,8 @@ def calcular_potencias(audio: np.ndarray, tamano_ventana: int = 160, salto_venta
 
     return np.asarray(potencias, dtype=np.float64), np.asarray(inicios, dtype=int)
 
-
+# Suaviza el arreglo de potencias para evitar que pequeños saltos corten la palabra.
 def suavizar_potencias(potencias: np.ndarray, ventana: int = 5) -> np.ndarray:
-    """
-    Suaviza el arreglo de potencias para evitar que pequeños saltos corten la palabra.
-    """
     potencias = np.asarray(potencias, dtype=np.float64)
 
     if len(potencias) == 0 or ventana <= 1:
@@ -69,14 +53,8 @@ def suavizar_potencias(potencias: np.ndarray, ventana: int = 5) -> np.ndarray:
     nucleo = np.ones(ventana, dtype=np.float64) / ventana
     return np.convolve(potencias, nucleo, mode="same")
 
-
+# Devuelve el inicio y fin del segmento activo principal.
 def segmento_activo_mas_largo(mascara: np.ndarray, maximo_silencio: int = 3) -> Tuple[int, int]:
-    """
-    Devuelve el inicio y fin del segmento activo principal.
-
-    maximo_silencio permite unir regiones activas separadas por silencios pequeños.
-    Esto ayuda cuando una palabra tiene una pausa interna muy corta.
-    """
     mascara = np.asarray(mascara, dtype=bool)
 
     if not np.any(mascara):
@@ -118,19 +96,18 @@ def segmento_activo_mas_largo(mascara: np.ndarray, maximo_silencio: int = 3) -> 
 
     return int(mejor_inicio), int(mejor_fin)
 
+"""
+Recorta el audio tomando el segmento donde está la palabra según potencia.
 
-def recortar_por_potencia(audio: np.ndarray, tamano_ventana: int = 160, salto_ventana: int = 64, umbral_relativo: float = 0.12, margen_marcos: int = 8, suavizado: int = 5, maximo_silencio: int = 4) -> Tuple[np.ndarray, Dict[str, object]]:
-    """
-    Recorta el audio tomando el segmento donde está la palabra según potencia.
-
-    La decisión se hace con un umbral adaptativo:
+La decisión se hace con un umbral adaptativo:
         umbral = piso_ruido + umbral_relativo * (potencia_maxima - piso_ruido)
 
-    donde piso_ruido se aproxima con un percentil bajo de las potencias.
+donde piso_ruido se aproxima con un percentil bajo de las potencias.
 
-    Retorna:
-        audio_recortado, informacion_recorte
-    """
+"""
+
+def recortar_por_potencia(audio: np.ndarray, tamano_ventana: int = 160, salto_ventana: int = 64, umbral_relativo: float = 0.12, margen_marcos: int = 8, suavizado: int = 5, maximo_silencio: int = 4) -> Tuple[np.ndarray, Dict[str, object]]:
+
     audio = np.asarray(audio, dtype=np.float64)
 
     if len(audio) == 0:
@@ -197,11 +174,9 @@ def recortar_por_potencia(audio: np.ndarray, tamano_ventana: int = 160, salto_ve
 
     return audio_recortado, informacion_recorte
 
-
+# Divide el audio en marcos de "tamano_ventana" muestras con "salto_ventana" y aplica ventana Hamming.
 def aplicar_ventaneo(audio_preenfatizado: np.ndarray, tamano_ventana: int = 160, salto_ventana: int = 64) -> np.ndarray:
-    """
-    Divide el audio en marcos de tamano_ventana muestras con salto_ventana y aplica ventana Hamming.
-    """
+ 
     audio_preenfatizado = np.asarray(audio_preenfatizado, dtype=np.float64)
 
     if tamano_ventana <= 0 or salto_ventana <= 0:
@@ -221,13 +196,12 @@ def aplicar_ventaneo(audio_preenfatizado: np.ndarray, tamano_ventana: int = 160,
 
     return np.asarray(marcos_ventaneados, dtype=np.float64)
 
-
+"""
+  Elimina marcos de muy baja potencia después del recorte.
+  Esto evita que los silencios residuales entren al LPC/cuantizador.
+"""
 def filtrar_marcos_por_potencia(marcos: np.ndarray, umbral_relativo: float = 0.04, minimo_marcos: int = 8) -> Tuple[np.ndarray, Dict[str, object]]:
-    """
-    Elimina marcos de muy baja potencia después del recorte.
 
-    Esto evita que los silencios residuales entren al LPC/cuantizador.
-    """
     marcos = np.asarray(marcos, dtype=np.float64)
 
     if len(marcos) == 0:
@@ -269,11 +243,9 @@ def filtrar_marcos_por_potencia(marcos: np.ndarray, umbral_relativo: float = 0.0
 
     return marcos_filtrados, informacion_filtro
 
-
+# Aplica recorte por potencia, preénfasis, ventaneo y filtrado de marcos.
 def procesar_audios(audios: Optional[Dict[str, List[dict]]] = None, coeficiente_preenfasis: float = 0.95, tamano_ventana: int = 160, salto_ventana: int = 64, usar_recorte_por_potencia: bool = True, umbral_recorte: float = 0.12, margen_marcos: int = 8, filtrar_marcos_bajos: bool = True, umbral_marcos: float = 0.04) -> Dict[str, List[AudioProcesado]]:
-    """
-    Aplica recorte por potencia, preénfasis, ventaneo y filtrado de marcos.
-    """
+
     if audios is None:
         audios = cargar_audios()
 

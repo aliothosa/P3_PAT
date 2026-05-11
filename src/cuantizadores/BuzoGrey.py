@@ -150,5 +150,3 @@ class CuantizadorVectorial:
     def obtenerCentroides(self) -> dict[int, np.ndarray]:
         return self.centroides
     
-    
-    # Cuantizador de LBG con distancias de Itakura-Saito

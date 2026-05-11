@@ -6,7 +6,6 @@ import librosa
 import numpy as np
 
 
-# Ruta esperada si ejecutas desde la raíz del proyecto con:
 # python -m src.app.punto_6_confusion
 ruta_base_audio = "src/resources/audio"
 
